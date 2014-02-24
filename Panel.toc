@@ -9,3 +9,4 @@
 
 Panel.lua
 Menu.lua
+Status.lua
