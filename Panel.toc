@@ -1,0 +1,11 @@
+## Interface: 50400
+## Title: Panel
+## Notes: Provides an interface to access useful data objects.
+## Author: Predicate
+## RequiredDeps: DataRegistry
+## OptionalDeps: BlankSlate
+## LoadManagers: LoadManager
+## X-LoadIf: return true
+
+Panel.lua
+Menu.lua
