@@ -12,16 +12,17 @@ status:SetHeight(PANELSIZE)
 status:SetPoint("RIGHT", -1 * PADDING, 0)
 
 local buttons = {}
+local onetimeframe
 local function updateDisplay()
 	local totalwidth = 0
 	for n, b in pairs(buttons) do
 		b:SetPoint("LEFT", totalwidth, 0)
 		local w = b.label:GetStringWidth()
-		if w == 0 then --hack for blizz bug
-			local f = CreateFrame("Frame")
-			f:SetScript("OnUpdate", function(self)
+		if w == 0 and not onetimeframe then --hack for blizz bug
+			onetimeframe = CreateFrame("Frame")
+			onetimeframe:SetScript("OnUpdate", function()
 				updateDisplay()
-				self:SetScript("OnUpdate", nil)
+				onetimeframe:SetScript("OnUpdate", nil)
 			end)
 			return
 		end
