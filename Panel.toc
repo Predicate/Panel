@@ -1,4 +1,4 @@
-## Interface: 50400
+## Interface: 60000
 ## Title: Panel
 ## Notes: Provides an interface to access useful data objects.
 ## Author: Predicate
