@@ -42,17 +42,62 @@ local function _TextChanged(self, _, _, _, newtext)
 end
 local function _OnClickChanged(self, _, _, _, onclick) self:SetScript("OnClick", onclick) end
 
+local function tooltip_OnEnter(self)
+	self.tooltip:SetOwner(self, "ANCHOR_TOPRIGHT")
+	if self.OnTooltipShow then self.OnTooltipShow(self.tooltip) end
+	self.tooltip:Show()
+end
+local function tooltip_OnLeave(self) self.tooltip:Hide() end
 
-local function addStatusItem(name, iconpath, dobj)
+local function _TooltipChanged(self, _, _, _, _, dobj)
+	if dobj.tooltip then
+		self.tooltip = dobj.tooltip
+		self:SetScript("OnEnter", tooltip_OnEnter)
+		self:SetScript("OnLeave", tooltip_OnLeave)
+	elseif dobj.OnEnter or dobj.OnLeave then
+		self.tooltip = nil
+		self:SetScript("OnEnter", dobj.OnEnter)
+		self:SetScript("OnLeave", dobj.OnLeave)
+	elseif dobj.OnTooltipShow then
+		if not self.defaultTooltip then
+			local tt = CreateFrame("GameTooltip", nil, self)
+			tt:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+				edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+				edgeSize = 16,
+				insets = { left = 4, right = 4, top = 4, bottom = 4 }
+			})
+			tt:SetBackdropColor(0, 0, 0, 0.8)
+
+			for i = 1, 10 do
+				local left, right = tt:CreateFontString(), tt:CreateFontString()
+				left:SetPoint("TOPLEFT", 10, -1 * (i * 14 - 4))
+				right:SetPoint("TOPRIGHT", -10, -1 * (i * 14 - 4))
+				left:SetFont([[Fonts/ARIALN.TTF]], 12)
+				right:SetFont([[Fonts/ARIALN.TTF]], 12)
+				tt:AddFontStrings(left, right)
+			end
+			self.defaultTooltip = tt
+		end
+		self.tooltip = self.defaultTooltip
+		self.OnTooltipShow = dobj.OnTooltipShow
+		self:SetScript("OnEnter", tooltip_OnEnter)
+		self:SetScript("OnLeave", tooltip_OnLeave)
+	end
+end
+
+
+local function addStatusItem(name, dobj)
 	if buttons[name] then return end
 	local b = CreateFrame("Button", nil, status)
+	b:SetHighlightTexture([[Interface/QUESTFRAME/UI-QuestLogTitleHighlight]])
+	b:GetHighlightTexture():SetVertexColor(1,1,1,0.3)
+
 	b:SetHeight(PANELSIZE)
 	local icon = b:CreateTexture()
 	b.icon = icon
 	icon:SetHeight(PANELSIZE - PADDING)
 	icon:SetWidth(PANELSIZE - PADDING)
 	icon:SetPoint("LEFT", PADDING, 0)
-	icon:SetTexture(iconpath)
 
 	local label = b:CreateFontString()
 	b.label = label
@@ -61,18 +106,18 @@ local function addStatusItem(name, iconpath, dobj)
 	label:SetJustifyH("LEFT")
 	label:SetFont([[Fonts/ARIALN.TTF]], PANELSIZE * .75)
 	label:SetShadowOffset(1, -1)
-	label:SetText(dobj.text or name)
 	b:SetFontString(label)
 
 	b.name = name
-	b.OnClick = dobj.OnClick
 	b.IconChanged = _IconChanged
 	b.TextChanged = _TextChanged
 	b.OnClickChanged = _OnClickChanged
+	b.TooltipChanged = _TooltipChanged
 
-	b:SetScript("OnEnter", dobj.OnEnter)
-	b:SetScript("OnLeave", dobj.OnLeave)
-	b:SetScript("OnClick", dobj.OnClick)
+	_IconChanged(b, nil, nil, nil, dobj.icon)
+	_TextChanged(b, nil, nil, nil, dobj.text or name)
+	_OnClickChanged(b, nil, nil, nil, dobj.OnClick)
+	_TooltipChanged(b, nil, nil, nil, nil, dobj)
 
 	buttons[name] = b
 	status:SetScript("OnUpdate", updateDisplay)
@@ -87,10 +132,13 @@ end
 
 local function newDataObject(name, dobj)
 	if dobj.type ~= "data source" then return end
-	local frame = addStatusItem(name, dobj.icon, dobj)
+	local frame = addStatusItem(name, dobj)
 	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_icon", "IconChanged")
 	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_text", "TextChanged")
+	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_tooltip", "TooltipChanged")
 	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_OnClick", "OnClickChanged")
+	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_OnEnter", "TooltipChanged")
+	DataRegistry.RegisterCallback(frame, "DataRegistry_AttributeChanged_"..name.."_OnLeave", "TooltipChanged")
 end
 
 for name, dobj in DataRegistry.DataObjectIterator() do
