@@ -129,7 +129,7 @@ local function _OnLeave(self)
 end
 local function _OnClick(self, ...)
 	toggleMenu()
-	if self.OnClick then self.OnClick(...) end
+	if self.OnClick then self:OnClick(...) end
 end
 
 local function addMenuItem(name, iconpath, dobj)
